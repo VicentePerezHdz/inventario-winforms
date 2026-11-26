@@ -251,119 +251,54 @@ namespace Inventario
         }
 
 
+        /// <summary>
+        /// Registra una compra: descuenta la cantidad del producto en el almacén si hay existencia suficiente.
+        /// Regresa el mensaje que se muestra al usuario.
+        /// </summary>
         public string ActualizarEnAlmacen(string TextBoxProducto, string astrCantidad)
         {
-            int Result = 0;
-            int Existencia = 0, Cantidad = 0, Precio = 0;
-            SqlDataReader reader;
-            SqlDataReader readerProducto;
-            string Producto = TextBoxProducto;
-            string Consulta = string.Empty;
-            SqlCommand EjecutaExistencia = null;
-            Cantidad = Convert.ToInt32(astrCantidad);//Aqui va la cantidad
-            string Concepto = "Salida";
-            string Mensaje = string.Empty;
-            if (con.State != ConnectionState.Open)
+            int cantidad;
+            if (!int.TryParse(astrCantidad, out cantidad) || cantidad <= 0)
             {
-                this.con = new SqlConnection(astrCadenaConexion);
-                this.con.Open();
-                Consulta = string.Empty;
-                EjecutaExistencia = null;
-                Consulta = "select * from ALMACEN where Nombre = @Nombre";
-                EjecutaExistencia = new SqlCommand(Consulta, con);
-                EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
+                return "Escribe una cantidad válida mayor a cero.";
+            }
 
-                reader = EjecutaExistencia.ExecuteReader();
-                if (reader.HasRows)
+            using (SqlConnection cn = new SqlConnection(astrCadenaConexion))
+            {
+                cn.Open();
+
+                int existencia;
+                using (SqlCommand consulta = new SqlCommand("SELECT Cantidad FROM Almacen WHERE Nombre = @Nombre", cn))
                 {
-                    reader.Read();
-
-                    Existencia = reader.GetInt32(5);
-
-
-
-
-                    if (Existencia >= Cantidad)
-                    {   //Aqui se hace la diferencia de lo que se tiene en la base de datos
-                        //contra lo que estamos comprando
-                        Existencia -= Cantidad;
-
-                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET Cantidad = @Existencia WHERE Nombre = @Nombre", con);
-                        EjecutaExistencia.Parameters.Add("@Existencia", SqlDbType.Int).Value = Existencia;
-                        EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
-                        reader = EjecutaExistencia.ExecuteReader();
-                        if (reader.HasRows)
-                        {
-                            EjecutaExistencia = new SqlCommand("insert into  (Codigo ,Fecha_Ingreso ,Nombre ,Descripcion,Cantidad,PrecioUnidad,Activo)Almacen Values(@Codigo, @Fecha_Ingreso, @Nombre, @Descripcion, @Cantidad, @PrecioUnidad,1)", con);
-                            Result = EjecutaExistencia.ExecuteNonQuery();
-                        }
-
-                        Mensaje = "Se  ha realizado el proceso de compra ";
-                    }
-                    else
+                    consulta.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = TextBoxProducto;
+                    object valor = consulta.ExecuteScalar();
+                    if (valor == null)
                     {
-                        Mensaje = "No hay producto suficiente, solo hay en existencia: " + Existencia + "";
-                        con.Close();
+                        return "No existe el Producto.";
                     }
+                    existencia = valor == DBNull.Value ? 0 : Convert.ToInt32(valor);
+                }
 
+                if (existencia < cantidad)
+                {
+                    return "No hay producto suficiente, solo hay en existencia: " + existencia;
+                }
+
+                // La condición "Cantidad >= @Cantidad" evita dejar la existencia en negativo
+                // si otra compra se registró entre la consulta y la actualización.
+                using (SqlCommand actualiza = new SqlCommand(
+                    "UPDATE Almacen SET Cantidad = Cantidad - @Cantidad WHERE Nombre = @Nombre AND Cantidad >= @Cantidad", cn))
+                {
+                    actualiza.Parameters.Add("@Cantidad", SqlDbType.Int).Value = cantidad;
+                    actualiza.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = TextBoxProducto;
+                    if (actualiza.ExecuteNonQuery() == 0)
+                    {
+                        return "No hay producto suficiente para completar la compra.";
+                    }
                 }
             }
-            else
-            {
-                con.Open();
 
-                Consulta = string.Empty;
-                EjecutaExistencia = null;
-                Consulta = "select * from ALMACEN where Nombre = @Nombre";
-                EjecutaExistencia = new SqlCommand(Consulta, con);
-                EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
-
-                reader = EjecutaExistencia.ExecuteReader();
-                if (reader.HasRows)
-                {
-                    reader.Read();
-
-                    Existencia = reader.GetInt32(5);
-
-
-
-
-                    if (Existencia >= Cantidad)
-                    {   //Aqui se hace la diferencia de lo que se tiene en la base de datos
-                        //contra lo que estamos comprando
-                        Existencia -= Cantidad;
-
-                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET Cantidad = @Existencia WHERE Nombre = @Nombre", con);
-                        EjecutaExistencia.Parameters.Add("@Existencia", SqlDbType.Int).Value = Existencia;
-                        EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
-                        reader = EjecutaExistencia.ExecuteReader();
-                        if (reader.HasRows)
-                        {
-                            EjecutaExistencia = new SqlCommand("insert into  Almacen  (Codigo ,Fecha_Ingreso ,Nombre ,Descripcion,Cantidad,PrecioUnidad,Activo) Values(@Codigo, @Fecha_Ingreso, @Nombre, @Descripcion, @Cantidad, @PrecioUnidad,1)", con);
-                            Result = EjecutaExistencia.ExecuteNonQuery();
-                        }
-
-                        Mensaje = "Se  ha realizado el proceso de compra ";
-                    }
-                    else
-                    {
-                        Mensaje = "No hay producto suficiente, solo hay en existencia: " + Existencia + "";
-                        con.Close();
-                    }
-
-
-                }
-                else
-                {
-                    Mensaje = "No existe el Producto.";
-                    con.Close();
-                }
-                Existencia = Cantidad = 0;
-
-
-            }
-            return Mensaje;
-
+            return "Se ha realizado el proceso de compra.";
         }
 
 

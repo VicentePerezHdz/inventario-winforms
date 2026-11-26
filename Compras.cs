@@ -27,7 +27,8 @@ namespace Inventario
         private void GuardarCompra()
         {
             
-            con.ActualizarEnAlmacen(txtnombre.Text,txtcantidad.Text);
+            string mensaje = con.ActualizarEnAlmacen(txtnombre.Text, txtcantidad.Text);
+            MessageBox.Show(mensaje, "Compras", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
         }
 
