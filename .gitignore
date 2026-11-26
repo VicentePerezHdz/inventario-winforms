@@ -1,0 +1,11 @@
+# Compilados y archivos de Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+
+# Salida del instalador
+SetupInventario/Debug/
+SetupInventario/Release/
+*.msi
