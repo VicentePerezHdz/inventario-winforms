@@ -288,7 +288,7 @@ namespace Inventario
                         //contra lo que estamos comprando
                         Existencia -= Cantidad;
 
-                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET  ACTIVO=0 Existencia = @Existencia WHERE Nombre = @Nombre", con);
+                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET Cantidad = @Existencia WHERE Nombre = @Nombre", con);
                         EjecutaExistencia.Parameters.Add("@Existencia", SqlDbType.Int).Value = Existencia;
                         EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
                         reader = EjecutaExistencia.ExecuteReader();
@@ -333,7 +333,7 @@ namespace Inventario
                         //contra lo que estamos comprando
                         Existencia -= Cantidad;
 
-                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET  ACTIVO=0 Existencia = @Existencia WHERE Nombre = @Nombre", con);
+                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET Cantidad = @Existencia WHERE Nombre = @Nombre", con);
                         EjecutaExistencia.Parameters.Add("@Existencia", SqlDbType.Int).Value = Existencia;
                         EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
                         reader = EjecutaExistencia.ExecuteReader();
