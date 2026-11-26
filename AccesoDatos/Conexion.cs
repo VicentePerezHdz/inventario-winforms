@@ -100,7 +100,8 @@ namespace Inventario
 
         public DataView filtrar(string RFC)
         {
-            vista.RowFilter = "RFC'" + RFC + "%'";
+            // Se duplican las comillas simples para que el texto no rompa la expresión del filtro.
+            vista.RowFilter = "RFC LIKE '" + RFC.Replace("'", "''") + "%'";
             return vista;
         }
 
@@ -268,8 +269,9 @@ namespace Inventario
                 this.con.Open();
                 Consulta = string.Empty;
                 EjecutaExistencia = null;
-                Consulta = "select *from ALMACEN where Nombre='" + Producto + "'";
+                Consulta = "select * from ALMACEN where Nombre = @Nombre";
                 EjecutaExistencia = new SqlCommand(Consulta, con);
+                EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
 
                 reader = EjecutaExistencia.ExecuteReader();
                 if (reader.HasRows)
@@ -286,7 +288,9 @@ namespace Inventario
                         //contra lo que estamos comprando
                         Existencia -= Cantidad;
 
-                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET  ACTIVO=0 Existencia='" + Existencia + "' WHERE Nombre='" + Producto + "'", con);
+                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET  ACTIVO=0 Existencia = @Existencia WHERE Nombre = @Nombre", con);
+                        EjecutaExistencia.Parameters.Add("@Existencia", SqlDbType.Int).Value = Existencia;
+                        EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
                         reader = EjecutaExistencia.ExecuteReader();
                         if (reader.HasRows)
                         {
@@ -310,8 +314,9 @@ namespace Inventario
 
                 Consulta = string.Empty;
                 EjecutaExistencia = null;
-                Consulta = "select *from ALMACEN where Nombre='" + Producto + "'";
+                Consulta = "select * from ALMACEN where Nombre = @Nombre";
                 EjecutaExistencia = new SqlCommand(Consulta, con);
+                EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
 
                 reader = EjecutaExistencia.ExecuteReader();
                 if (reader.HasRows)
@@ -328,7 +333,9 @@ namespace Inventario
                         //contra lo que estamos comprando
                         Existencia -= Cantidad;
 
-                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET  ACTIVO=0 Existencia='" + Existencia + "' WHERE Nombre='" + Producto + "'", con);
+                        EjecutaExistencia = new SqlCommand("UPDATE Almacen SET  ACTIVO=0 Existencia = @Existencia WHERE Nombre = @Nombre", con);
+                        EjecutaExistencia.Parameters.Add("@Existencia", SqlDbType.Int).Value = Existencia;
+                        EjecutaExistencia.Parameters.Add("@Nombre", SqlDbType.VarChar, 50).Value = Producto;
                         reader = EjecutaExistencia.ExecuteReader();
                         if (reader.HasRows)
                         {
