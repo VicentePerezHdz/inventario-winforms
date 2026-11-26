@@ -67,12 +67,22 @@ namespace Inventario
             DataTable dt = new DataTable();
             try
             {
-                SqlDataAdapter ds = new SqlDataAdapter("SELECT *FROM  tblusuario WHERE Usuario='" + txtusuario + "'AND Contrasenia='" + txtpassword + "'AND ACTIVO=1", getcon);
-
-                ds.Fill(dt);
+                // Consulta parametrizada: el usuario y la contraseña viajan como datos, nunca como parte del texto SQL,
+                // así que un valor como ' OR '1'='1 no puede cambiar la consulta (evita la inyección SQL).
+                const string sql = "SELECT * FROM tblusuario WHERE Usuario = @Usuario AND Contrasenia = @Contrasenia AND ACTIVO = 1";
+                using (SqlCommand cmd = new SqlCommand(sql, getcon))
+                {
+                    cmd.Parameters.Add("@Usuario", SqlDbType.VarChar, 50).Value = txtusuario;
+                    cmd.Parameters.Add("@Contrasenia", SqlDbType.VarChar, 50).Value = txtpassword;
+                    using (SqlDataAdapter ds = new SqlDataAdapter(cmd))
+                    {
+                        ds.Fill(dt);
+                    }
+                }
             }
-            catch (Exception e)
+            catch (Exception)
             {
+                // Si la base de datos no responde se regresa la tabla vacía y el login rechaza el acceso.
             }
             return dt;
         }
